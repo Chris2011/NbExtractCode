@@ -2,18 +2,13 @@ package org.chrisle.netbeans.plugins.nbextractcode;
 
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.text.JTextComponent;
-import org.netbeans.api.editor.EditorActionNames;
 import org.netbeans.api.editor.EditorActionRegistration;
-import org.netbeans.api.editor.EditorActionRegistrations;
 import org.openide.filesystems.FileUtil;
 import org.netbeans.spi.editor.AbstractEditorAction;
 import org.openide.awt.ActionID;
@@ -44,17 +39,24 @@ public final class NbExtractCodeAction extends AbstractEditorAction {
         if (_selectedText != null && !_selectedText.isEmpty()) {
             TopComponent activeTC = TopComponent.getRegistry().getActivated();
             DataObject dataLookup = activeTC.getLookup().lookup(DataObject.class);
-            String filePath = FileUtil.toFile(dataLookup.getPrimaryFile()).getParent() + "\\";
+            File primaryFile = FileUtil.toFile(dataLookup.getPrimaryFile());
             
             try {
-                //fallback to create arbitrary file in current folder
-                JFileChooser test = new JFileChooser(filePath);
                 String fileName = "NewFile." + FileUtil.getExtension(FileUtil.toFile(dataLookup.getPrimaryFile()).getName());
 
-                test.showSaveDialog(null);
-
                 if (null != fileName) {
-                    final File file = new File(filePath + fileName);
+                    String filePath = primaryFile.getParent() + "\\";
+                    JFileChooser fileChooser = new JFileChooser(filePath);
+                    File file = new File(fileName);
+
+                    fileChooser.setSelectedFile(file);
+                    int state = fileChooser.showSaveDialog(null);
+                    
+                    if (state == JFileChooser.CANCEL_OPTION) {
+                        return;
+                    }
+
+                    file = fileChooser.getSelectedFile();
 
                     if (file.exists()) {
                         JOptionPane.showMessageDialog(null, String.format("Cannot create File %s already exists.", file.getAbsolutePath()), "Paste to new file", JOptionPane.WARNING_MESSAGE);
@@ -67,8 +69,8 @@ public final class NbExtractCodeAction extends AbstractEditorAction {
                     fileWriter.close();
 
                     FileObject fileObj = FileUtil.createData(file);
-//                    writeToFile(file, clipboardContent);
-                    //open newly created file in editor
+
+                    // Open newly created file in editor.
                     DataObject.find(fileObj).getLookup().lookup(OpenCookie.class).open();
                 }
             } catch (HeadlessException | IOException ex) {
@@ -76,8 +78,4 @@ public final class NbExtractCodeAction extends AbstractEditorAction {
             }
         }
     }
-
-//    public static String getSelectedText() {
-//        return _selectedText;
-//    }
 }
