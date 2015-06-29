@@ -7,14 +7,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Caret;
 import javax.swing.text.JTextComponent;
 import org.netbeans.api.editor.EditorActionRegistration;
+import org.netbeans.editor.BaseDocument;
 import org.openide.filesystems.FileUtil;
 import org.netbeans.spi.editor.AbstractEditorAction;
 import org.openide.awt.ActionID;
 import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
+import org.openide.util.Exceptions;
 import org.openide.windows.TopComponent;
 
 @ActionID(
@@ -40,6 +44,7 @@ public final class NbExtractCodeAction extends AbstractEditorAction {
             TopComponent activeTC = TopComponent.getRegistry().getActivated();
             DataObject dataLookup = activeTC.getLookup().lookup(DataObject.class);
             File primaryFile = FileUtil.toFile(dataLookup.getPrimaryFile());
+            BaseDocument doc = (BaseDocument) target.getDocument();
             
             try {
                 String fileName = "NewFile." + FileUtil.getExtension(FileUtil.toFile(dataLookup.getPrimaryFile()).getName());
@@ -69,6 +74,8 @@ public final class NbExtractCodeAction extends AbstractEditorAction {
                     fileWriter.close();
 
                     FileObject fileObj = FileUtil.createData(file);
+                    
+                    removeSelectedText(target, doc);
 
                     // Open newly created file in editor.
                     DataObject.find(fileObj).getLookup().lookup(OpenCookie.class).open();
@@ -76,6 +83,18 @@ public final class NbExtractCodeAction extends AbstractEditorAction {
             } catch (HeadlessException | IOException ex) {
                 throw new RuntimeException(ex);
             }
+        }
+    }
+
+    private void removeSelectedText(JTextComponent target, BaseDocument doc) {
+        try {
+            Caret caret = target.getCaret();
+            int p0 = Math.min(caret.getDot(), caret.getMark());
+            int p1 = Math.max(caret.getDot(), caret.getMark());
+            
+            doc.remove(p0, p1 - p0);
+        } catch (BadLocationException ex) {
+            Exceptions.printStackTrace(ex);
         }
     }
 }
