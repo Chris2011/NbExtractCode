@@ -7,4 +7,4 @@
 4. Set a name (Default name is '"NewFile.fileExtension". The Fileextension was set to the extension of the file, where you've got the code.)
 
 ### See how it works
-![Alt text](/screenshots/NbExtractCode.gif?raw=true)
+![Alt text](screenshots/NbExtractCode.gif?raw=true)
